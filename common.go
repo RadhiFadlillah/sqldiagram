@@ -25,6 +25,7 @@ type Table struct {
 
 type Group struct {
 	Name   string
+	Label  string
 	Tables []Table
 }
 

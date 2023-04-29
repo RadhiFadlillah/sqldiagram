@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -39,19 +40,27 @@ func cmdMySqlAction(ctx *cli.Context) error {
 
 	// Parse and extract tables from each file
 	p := parser.New()
-	var tables []Table
+	var groups []Group
 	for _, sqlFile := range sqlFiles {
-		// Extract tables from file
-		tablesInFile, err := parseMySqlFile(p, sqlFile)
+		// Extract group from file
+		group, err := parseMySqlFile(p, sqlFile)
 		if err != nil {
 			return err
 		}
 
-		tables = append(tables, tablesInFile...)
+		// Save group
+		if group != nil && len(group.Tables) > 0 {
+			groups = append(groups, *group)
+		}
+	}
+
+	// Make sure there is a table found
+	if len(groups) == 0 {
+		return fmt.Errorf("no table found")
 	}
 
 	// Render diagram
-	d2codes, err := generateD2codes(tables)
+	d2codes, err := generateD2codes(groups)
 	if err != nil {
 		return err
 	}
@@ -61,7 +70,7 @@ func cmdMySqlAction(ctx *cli.Context) error {
 	return nil
 }
 
-func parseMySqlFile(p *parser.Parser, path string) ([]Table, error) {
+func parseMySqlFile(p *parser.Parser, path string) (*Group, error) {
 	// Open file
 	f, err := os.ReadFile(path)
 	if err != nil {
@@ -141,5 +150,15 @@ func parseMySqlFile(p *parser.Parser, path string) ([]Table, error) {
 		}
 	}
 
-	return tables, nil
+	// Prepare group data
+	groupName := filepath.Base(path)
+	groupName = strings.TrimSuffix(groupName, filepath.Ext(groupName))
+	groupLabel := strings.ReplaceAll(groupName, "_", "-")
+	groupLabel = strings.ToUpper(groupLabel)
+
+	return &Group{
+		Name:   groupName,
+		Label:  groupLabel,
+		Tables: tables,
+	}, nil
 }
