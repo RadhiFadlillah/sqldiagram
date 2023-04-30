@@ -32,6 +32,9 @@ func cmdMySqlAction(ctx *cli.Context) error {
 		inputDir = "."
 	}
 
+	// Parse flags
+	dontUseGroup := ctx.Bool(appFlNoGroup)
+
 	// Catch SQL files inside input dir
 	sqlFiles, err := getSqlFiles(inputDir)
 	if err != nil {
@@ -57,6 +60,15 @@ func cmdMySqlAction(ctx *cli.Context) error {
 	// Make sure there is a table found
 	if len(groups) == 0 {
 		return fmt.Errorf("no table found")
+	}
+
+	// If necessary, merge all groups into one
+	if len(groups) > 1 && dontUseGroup {
+		root := Group{Name: "root"}
+		for _, g := range groups {
+			root.Tables = append(root.Tables, g.Tables...)
+		}
+		groups = []Group{root}
 	}
 
 	// Render diagram

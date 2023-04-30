@@ -3,6 +3,12 @@ module github.com/RadhiFadlillah/sqldiagram
 go 1.20
 
 require (
+	github.com/pingcap/tidb v1.1.0-beta.0.20230419104120-29116c0256c5
+	github.com/pingcap/tidb/parser v0.0.0-20230419104120-29116c0256c5
+	github.com/urfave/cli/v2 v2.25.1
+)
+
+require (
 	github.com/BurntSushi/toml v1.2.1 // indirect
 	github.com/benbjohnson/clock v1.3.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
@@ -28,8 +34,6 @@ require (
 	github.com/pingcap/failpoint v0.0.0-20220423142525-ae43b7f4e5c3 // indirect
 	github.com/pingcap/kvproto v0.0.0-20221130022225-6c56ac56fe5f // indirect
 	github.com/pingcap/log v1.1.1-0.20221116035753-734d527bc87c // indirect
-	github.com/pingcap/tidb v1.1.0-beta.0.20230419104120-29116c0256c5 // indirect
-	github.com/pingcap/tidb/parser v0.0.0-20230419104120-29116c0256c5 // indirect
 	github.com/pingcap/tipb v0.0.0-20221123081521-2fb828910813 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/power-devops/perfstat v0.0.0-20210106213030-5aafc221ea8c // indirect
@@ -46,7 +50,6 @@ require (
 	github.com/tikv/pd/client v0.0.0-20221031025758-80f0d8ca4d07 // indirect
 	github.com/uber/jaeger-client-go v2.22.1+incompatible // indirect
 	github.com/uber/jaeger-lib v2.4.1+incompatible // indirect
-	github.com/urfave/cli/v2 v2.25.1 // indirect
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
 	github.com/yusufpapurcu/wmi v1.2.2 // indirect
 	go.uber.org/atomic v1.10.0 // indirect
