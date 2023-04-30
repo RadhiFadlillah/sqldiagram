@@ -2,62 +2,83 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"text/template"
+
+	"oss.terrastruct.com/d2/d2graph"
+	"oss.terrastruct.com/d2/d2layouts/d2elklayout"
+	"oss.terrastruct.com/d2/d2lib"
+	"oss.terrastruct.com/d2/d2target"
+	"oss.terrastruct.com/d2/lib/textmeasure"
 )
 
-func generateD2Codes(groups []Group) (string, error) {
+func generateD2(groups []Group) (*d2target.Diagram, *d2graph.Graph, error) {
+	// Prepare template
 	tpl, err := template.New("d2").
 		Funcs(template.FuncMap{"bgColor": getBgColor}).
 		Funcs(template.FuncMap{"fgColor": getFgColor}).
 		Parse(d2TemplateText)
 	if err != nil {
-		return "", fmt.Errorf("template error: %w", err)
+		return nil, nil, fmt.Errorf("create template error: %w", err)
 	}
 
+	// Execute template to generate D2 codes
+	var d2Codes []byte
 	if len(groups) == 1 {
-		return genD2FromTables(tpl, groups[0].Tables)
+		d2Codes, err = d2CodesFromTables(tpl, groups[0].Tables)
 	} else {
-		return genD2FromGroups(tpl, groups)
+		d2Codes, err = d2CodesFromGroups(tpl, groups)
 	}
+	if err != nil {
+		return nil, nil, fmt.Errorf("exec template error: %w", err)
+	}
+
+	// Prepare text measurer
+	ruler, err := textmeasure.NewRuler()
+	if err != nil {
+		return nil, nil, fmt.Errorf("textmeasure error: %w", err)
+	}
+
+	// Prepare ELK layout
+	layout := func(ctx context.Context, g *d2graph.Graph) error {
+		return d2elklayout.Layout(ctx, g, &d2elklayout.ConfigurableOpts{
+			Algorithm:       "layered",
+			NodeSpacing:     20.0,
+			Padding:         "[top=50,left=50,bottom=50,right=50]",
+			EdgeNodeSpacing: 50.0,
+			SelfLoopSpacing: 50.0,
+		})
+	}
+
+	// Generate diagram and graph
+	ctx := context.Background()
+	diagram, graph, err := d2lib.Compile(ctx, string(d2Codes), &d2lib.CompileOptions{
+		Ruler:  ruler,
+		Layout: layout})
+	if err != nil {
+		return nil, nil, fmt.Errorf("compile error: %w", err)
+	}
+
+	return diagram, graph, nil
 }
 
-func genD2FromTables(tpl *template.Template, tables []Table) (string, error) {
+func d2CodesFromTables(tpl *template.Template, tables []Table) ([]byte, error) {
 	buffer := bytes.NewBuffer(nil)
 	if err := tpl.ExecuteTemplate(buffer, "d2Tables", tables); err != nil {
-		return "", fmt.Errorf("template write error: %w", err)
+		return nil, fmt.Errorf("template write error: %w", err)
 	}
 
-	return buffer.String(), nil
+	return buffer.Bytes(), nil
 }
 
-func genD2FromGroups(tpl *template.Template, groups []Group) (string, error) {
-	// Map table name to its group
-	mapTableGroup := map[string]string{}
-	for _, g := range groups {
-		for _, t := range g.Tables {
-			mapTableGroup[t.Name] = g.Name
-		}
-	}
-
-	// Put group name to related tables
-	for _, g := range groups {
-		for _, t := range g.Tables {
-			for i, rt := range t.RelatedTables {
-				if rtGroup, exist := mapTableGroup[rt]; exist {
-					t.RelatedTables[i] = rtGroup + "." + rt
-				}
-			}
-		}
-	}
-
-	// Execute template
+func d2CodesFromGroups(tpl *template.Template, groups []Group) ([]byte, error) {
 	buffer := bytes.NewBuffer(nil)
 	if err := tpl.ExecuteTemplate(buffer, "d2Groups", groups); err != nil {
-		return "", fmt.Errorf("template write error: %w", err)
+		return nil, fmt.Errorf("template write error: %w", err)
 	}
 
-	return buffer.String(), nil
+	return buffer.Bytes(), nil
 }
 
 var d2TemplateText = `

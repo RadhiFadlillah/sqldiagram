@@ -10,6 +10,9 @@ import (
 var (
 	appFlNoGroup      = "no-group"
 	appFlNoGroupAlias = []string{"ng"}
+
+	appFlRawD2      = "raw-d2"
+	appFlRawD2Alias = []string{"raw"}
 )
 
 func main() {
@@ -23,6 +26,12 @@ func main() {
 				Name:    appFlNoGroup,
 				Aliases: appFlNoGroupAlias,
 				Usage:   "don't render separate file as group",
+			},
+			&cli.BoolFlag{
+				Value:   false,
+				Name:    appFlRawD2,
+				Aliases: appFlRawD2Alias,
+				Usage:   "render as raw D2 scripts",
 			},
 		},
 		Commands: []*cli.Command{

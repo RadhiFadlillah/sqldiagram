@@ -34,6 +34,7 @@ func cmdMySqlAction(ctx *cli.Context) error {
 
 	// Parse flags
 	dontUseGroup := ctx.Bool(appFlNoGroup)
+	renderRawD2 := ctx.Bool(appFlRawD2)
 
 	// Catch SQL files inside input dir
 	sqlFiles, err := getSqlFiles(inputDir)
@@ -71,19 +72,47 @@ func cmdMySqlAction(ctx *cli.Context) error {
 		groups = []Group{root}
 	}
 
-	// Generate d2 codes
-	d2codes, err := generateD2Codes(groups)
+	// If necessary, attach group name to table relations
+	if len(groups) > 1 {
+		// Map table name to its group
+		mapTableGroup := map[string]string{}
+		for _, g := range groups {
+			for _, t := range g.Tables {
+				mapTableGroup[t.Name] = g.Name
+			}
+		}
+
+		// Put group name to related tables
+		for _, g := range groups {
+			for _, t := range g.Tables {
+				for i, rt := range t.RelatedTables {
+					if rtGroup, exist := mapTableGroup[rt]; exist {
+						t.RelatedTables[i] = rtGroup + "." + rt
+					}
+				}
+			}
+		}
+	}
+
+	// Generate d2 diagram and graph
+	diagram, graph, err := generateD2(groups)
 	if err != nil {
 		return err
 	}
 
-	// Render D2 to SVG
-	svgCodes, err := renderD2Svg(d2codes)
-	if err != nil {
-		return err
+	// Render d2 to preferred format
+	var renderResult []byte
+	if renderRawD2 {
+		renderResult = renderScript(graph)
+	} else {
+		renderResult, err = renderSvg(diagram)
+		if err != nil {
+			return err
+		}
 	}
 
-	fmt.Println(string(svgCodes))
+	// Print to std out
+	fmt.Println(string(renderResult))
 	return nil
 }
 

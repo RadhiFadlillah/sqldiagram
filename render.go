@@ -2,44 +2,22 @@ package main
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 
 	"github.com/go-shiori/dom"
+	"oss.terrastruct.com/d2/d2format"
 	"oss.terrastruct.com/d2/d2graph"
-	"oss.terrastruct.com/d2/d2layouts/d2elklayout"
-	"oss.terrastruct.com/d2/d2lib"
 	"oss.terrastruct.com/d2/d2renderers/d2svg"
+	"oss.terrastruct.com/d2/d2target"
 	"oss.terrastruct.com/d2/d2themes/d2themescatalog"
-	"oss.terrastruct.com/d2/lib/textmeasure"
 )
 
-func renderD2Svg(codes string) ([]byte, error) {
-	// Prepare text measurer
-	ruler, err := textmeasure.NewRuler()
-	if err != nil {
-		return nil, fmt.Errorf("textmeasure error: %w", err)
-	}
+func renderScript(graph *d2graph.Graph) []byte {
+	formatted := d2format.Format(graph.AST)
+	return []byte(formatted)
+}
 
-	// Prepare ELK layout
-	layout := func(ctx context.Context, g *d2graph.Graph) error {
-		return d2elklayout.Layout(ctx, g, &d2elklayout.ConfigurableOpts{
-			Algorithm:       "layered",
-			NodeSpacing:     20.0,
-			Padding:         "[top=50,left=50,bottom=50,right=50]",
-			EdgeNodeSpacing: 50.0,
-			SelfLoopSpacing: 50.0,
-		})
-	}
-
-	// Generate diagram
-	diagram, _, err := d2lib.Compile(context.Background(), codes, &d2lib.CompileOptions{
-		Ruler:  ruler,
-		Layout: layout})
-	if err != nil {
-		return nil, fmt.Errorf("d2 compile error: %w", err)
-	}
-
+func renderSvg(diagram *d2target.Diagram) ([]byte, error) {
 	// Convert diagram to SVG
 	svg, err := d2svg.Render(diagram, &d2svg.RenderOpts{
 		Pad:     d2svg.DEFAULT_PADDING,
@@ -49,7 +27,7 @@ func renderD2Svg(codes string) ([]byte, error) {
 	}
 
 	// Stylize SVG for better clarity
-	svg, err = stylizeD2Svg(svg)
+	svg, err = stylizeSvg(svg)
 	if err != nil {
 		return nil, fmt.Errorf("d2 styling error: %w", err)
 	}
@@ -57,7 +35,7 @@ func renderD2Svg(codes string) ([]byte, error) {
 	return svg, nil
 }
 
-func stylizeD2Svg(svg []byte) ([]byte, error) {
+func stylizeSvg(svg []byte) ([]byte, error) {
 	// Parse SVG as HTML document
 	doc, err := dom.FastParse(bytes.NewReader(svg))
 	if err != nil {
