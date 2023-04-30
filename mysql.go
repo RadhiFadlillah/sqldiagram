@@ -71,14 +71,19 @@ func cmdMySqlAction(ctx *cli.Context) error {
 		groups = []Group{root}
 	}
 
-	// Render diagram
-	d2codes, err := generateD2codes(groups)
+	// Generate d2 codes
+	d2codes, err := generateD2Codes(groups)
 	if err != nil {
 		return err
 	}
 
-	fmt.Println(d2codes)
+	// Render D2 to SVG
+	svgCodes, err := renderD2Svg(d2codes)
+	if err != nil {
+		return err
+	}
 
+	fmt.Println(string(svgCodes))
 	return nil
 }
 

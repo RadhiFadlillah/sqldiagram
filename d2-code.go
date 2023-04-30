@@ -6,7 +6,7 @@ import (
 	"text/template"
 )
 
-func generateD2codes(groups []Group) (string, error) {
+func generateD2Codes(groups []Group) (string, error) {
 	tpl, err := template.New("d2").
 		Funcs(template.FuncMap{"bgColor": getBgColor}).
 		Funcs(template.FuncMap{"fgColor": getFgColor}).
@@ -111,6 +111,16 @@ var d2TemplateText = `
 			{{$table.Name}} -> {{$rel}}: {class: relation; style.stroke: "{{$tableFg}}"}
 		{{- end}}
 	{{- end}}
+
+	xxx-bold-node: "|" {
+		width: 1
+		height: 1
+		style: {
+			opacity: 0
+			stroke-width: 0
+			bold: true
+		}
+	}	  
 {{- end}}
 
 {{- define "d2Groups"}}
