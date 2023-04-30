@@ -27,8 +27,9 @@ func cmdMySql() *cli.Command {
 
 func cmdMySqlAction(ctx *cli.Context) error {
 	// Parse flags
-	dontUseGroup := ctx.Bool(appFlNoGroup)
-	renderRawD2 := ctx.Bool(appFlRawD2)
+	dontUseGroup := ctx.Bool(appNoGroup)
+	renderRawD2 := ctx.Bool(appRawD2)
+	outputPath := ctx.String(appOutput)
 
 	// Get input path from args
 	inputPaths := ctx.Args().Slice()
@@ -110,9 +111,8 @@ func cmdMySqlAction(ctx *cli.Context) error {
 		}
 	}
 
-	// Print to std out
-	fmt.Println(string(renderResult))
-	return nil
+	// Write the render result
+	return writeOutput(renderResult, outputPath, renderRawD2)
 }
 
 func parseMySqlFile(p *parser.Parser, path string) (*Group, error) {

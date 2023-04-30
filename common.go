@@ -100,3 +100,23 @@ func getSqlFiles(inputPaths ...string) ([]string, error) {
 
 	return sqlFiles, nil
 }
+
+func writeOutput(data []byte, dst string, isRaw bool) error {
+	// If there are no destination path, just write in stdout
+	if dst == "" {
+		_, err := os.Stdout.Write(data)
+		return err
+	}
+
+	// If destination has no extension, put it
+	if filepath.Ext(dst) == "" {
+		if isRaw {
+			dst += ".d2"
+		} else {
+			dst += ".svg"
+		}
+	}
+
+	// Write to destination file
+	return os.WriteFile(dst, data, os.ModePerm)
+}
