@@ -31,6 +31,14 @@ func cmdMySqlAction(ctx *cli.Context) error {
 	renderRawD2 := ctx.Bool(appRawD2)
 	outputPath := ctx.String(appOutput)
 
+	diagramDirection := ctx.String(appDirection)
+	diagramDirection = strings.ToLower(diagramDirection)
+	switch diagramDirection {
+	case "up", "down", "left":
+	default:
+		diagramDirection = "right"
+	}
+
 	// Get input path from args
 	inputPaths := ctx.Args().Slice()
 	if len(inputPaths) == 0 {
@@ -95,7 +103,7 @@ func cmdMySqlAction(ctx *cli.Context) error {
 	}
 
 	// Generate d2 diagram and graph
-	diagram, graph, err := generateD2(groups)
+	diagram, graph, err := generateD2(groups, diagramDirection)
 	if err != nil {
 		return err
 	}

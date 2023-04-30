@@ -8,13 +8,15 @@ import (
 )
 
 var (
-	appNoGroup = "no-group"
-	appRawD2   = "raw-d2"
-	appOutput  = "output"
+	appNoGroup   = "no-group"
+	appRawD2     = "raw-d2"
+	appOutput    = "output"
+	appDirection = "direction"
 
-	appAliasNoGroup = []string{"ng"}
-	appAliasRawD2   = []string{"raw"}
-	appAliasOutput  = []string{"o"}
+	appAliasNoGroup   = []string{"ng"}
+	appAliasRawD2     = []string{"raw"}
+	appAliasOutput    = []string{"o"}
+	appAliasDirection = []string{"dir"}
 )
 
 func main() {
@@ -39,6 +41,11 @@ func main() {
 				Name:    appOutput,
 				Aliases: appAliasOutput,
 				Usage:   "write to specified path (if empty will use stdout)",
+			},
+			&cli.StringFlag{
+				Name:    appDirection,
+				Aliases: appAliasDirection,
+				Usage:   "direction of chart (up|down|right|left, default right)",
 			},
 		},
 		Commands: []*cli.Command{

@@ -13,7 +13,7 @@ import (
 	"oss.terrastruct.com/d2/lib/textmeasure"
 )
 
-func generateD2(groups []Group) (*d2target.Diagram, *d2graph.Graph, error) {
+func generateD2(groups []Group, direction string) (*d2target.Diagram, *d2graph.Graph, error) {
 	// Prepare template
 	tpl, err := template.New("d2").
 		Funcs(template.FuncMap{
@@ -28,9 +28,9 @@ func generateD2(groups []Group) (*d2target.Diagram, *d2graph.Graph, error) {
 	// Execute template to generate D2 codes
 	var d2Codes []byte
 	if len(groups) == 1 {
-		d2Codes, err = d2CodesFromTables(tpl, groups[0].Tables)
+		d2Codes, err = d2CodesFromTables(tpl, groups[0].Tables, direction)
 	} else {
-		d2Codes, err = d2CodesFromGroups(tpl, groups)
+		d2Codes, err = d2CodesFromGroups(tpl, groups, direction)
 	}
 	if err != nil {
 		return nil, nil, fmt.Errorf("exec template error: %w", err)
@@ -65,18 +65,20 @@ func generateD2(groups []Group) (*d2target.Diagram, *d2graph.Graph, error) {
 	return diagram, graph, nil
 }
 
-func d2CodesFromTables(tpl *template.Template, tables []Table) ([]byte, error) {
+func d2CodesFromTables(tpl *template.Template, tables []Table, direction string) ([]byte, error) {
 	buffer := bytes.NewBuffer(nil)
-	if err := tpl.ExecuteTemplate(buffer, "d2Tables", tables); err != nil {
+	data := d2TemplateData{Direction: direction, Tables: tables}
+	if err := tpl.ExecuteTemplate(buffer, "d2Tables", data); err != nil {
 		return nil, fmt.Errorf("template write error: %w", err)
 	}
 
 	return buffer.Bytes(), nil
 }
 
-func d2CodesFromGroups(tpl *template.Template, groups []Group) ([]byte, error) {
+func d2CodesFromGroups(tpl *template.Template, groups []Group, direction string) ([]byte, error) {
 	buffer := bytes.NewBuffer(nil)
-	if err := tpl.ExecuteTemplate(buffer, "d2Groups", groups); err != nil {
+	data := d2TemplateData{Direction: direction, Groups: groups}
+	if err := tpl.ExecuteTemplate(buffer, "d2Groups", data); err != nil {
 		return nil, fmt.Errorf("template write error: %w", err)
 	}
 
@@ -88,6 +90,12 @@ func d2EscapeKeyword(name string) string {
 		return fmt.Sprintf("\"%s \"", name)
 	}
 	return name
+}
+
+type d2TemplateData struct {
+	Direction string
+	Groups    []Group
+	Tables    []Table
 }
 
 var d2TemplateText = `
@@ -110,9 +118,9 @@ var d2TemplateText = `
 
 {{- define "d2Tables"}}
 	{{template "styles"}}
-	direction: right
+	direction: {{$.Direction}}
 	
-	{{- range $tableIdx, $table := . }}
+	{{- range $tableIdx, $table := .Tables }}
 		{{$tableFg := (fgColor $tableIdx)}}
 		{{$table.Name}}: {
 			shape: sql_table
@@ -135,7 +143,7 @@ var d2TemplateText = `
 		}
 	{{- end}}
 
-	{{- range $tableIdx, $table := . }}
+	{{- range $tableIdx, $table := .Tables }}
 		{{$tableFg := (fgColor $tableIdx)}}
 		{{- range $rel := $table.RelatedTables}}
 			{{$table.Name}} -> {{$rel}}: {class: relation; style.stroke: "{{$tableFg}}"}
@@ -155,9 +163,9 @@ var d2TemplateText = `
 
 {{- define "d2Groups"}}
 	{{template "styles"}}
-	direction: right
+	direction: {{$.Direction}}
 
-	{{- range $groupIdx, $group := .}}
+	{{- range $groupIdx, $group := .Groups }}
 		{{- $groupBg := (bgColor $groupIdx) }}
 		{{- $groupFg := (fgColor $groupIdx) }}
 		{{$group.Name}}: {{$group.Label}} {
@@ -192,7 +200,7 @@ var d2TemplateText = `
 		}
 	{{- end}}
 
-	{{- range $groupIdx, $group := .}}
+	{{- range $groupIdx, $group := .Groups }}
 		{{- $groupFg := (fgColor $groupIdx) }}
 		{{- range $table := $group.Tables}}
 			{{- range $rel := $table.RelatedTables}}
