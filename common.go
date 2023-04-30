@@ -1,7 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"io/fs"
+	"os"
 	"path/filepath"
 )
 
@@ -62,14 +64,39 @@ func (s Set[T]) Keys() []T {
 // COMMON FUNCTIONS
 // ================================================
 
-func getSqlFiles(inputDir string) ([]string, error) {
+func getSqlFiles(inputPaths ...string) ([]string, error) {
 	var sqlFiles []string
-	err := filepath.Walk(inputDir, func(path string, info fs.FileInfo, err error) error {
-		if !info.IsDir() && filepath.Ext(path) == ".sql" {
-			sqlFiles = append(sqlFiles, path)
+	for _, input := range inputPaths {
+		// Get input stat
+		stat, err := os.Stat(input)
+		if err != nil {
+			continue
 		}
-		return nil
-	})
 
-	return sqlFiles, err
+		// If input is not dir, halt
+		if !stat.IsDir() {
+			if filepath.Ext(stat.Name()) == ".sql" {
+				sqlFiles = append(sqlFiles, input)
+			}
+			continue
+		}
+
+		// Look for SQL files inside dir
+		err = filepath.Walk(input, func(path string, info fs.FileInfo, err error) error {
+			if !info.IsDir() && filepath.Ext(path) == ".sql" {
+				sqlFiles = append(sqlFiles, path)
+			}
+			return nil
+		})
+
+		if err != nil {
+			continue
+		}
+	}
+
+	if len(sqlFiles) == 0 {
+		return nil, fmt.Errorf("no sql files found")
+	}
+
+	return sqlFiles, nil
 }

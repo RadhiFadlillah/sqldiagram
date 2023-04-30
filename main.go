@@ -18,8 +18,8 @@ var (
 func main() {
 	app := &cli.App{
 		Name:      "sqldiagram",
-		Usage:     "generate ERD from SQL file(s)",
-		UsageText: "sqldiagram [global options] command [command options] <input-dir>",
+		Usage:     "generate ERD from SQL file(s) as SVG file",
+		UsageText: "sqldiagram [global options] command [command options] <input-1> ... <input-n>",
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
 				Value:   false,

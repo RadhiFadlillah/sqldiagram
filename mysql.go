@@ -26,18 +26,17 @@ func cmdMySql() *cli.Command {
 }
 
 func cmdMySqlAction(ctx *cli.Context) error {
-	// Get input dir from args
-	inputDir := ctx.Args().Get(0)
-	if inputDir == "" {
-		inputDir = "."
-	}
-
 	// Parse flags
 	dontUseGroup := ctx.Bool(appFlNoGroup)
 	renderRawD2 := ctx.Bool(appFlRawD2)
 
-	// Catch SQL files inside input dir
-	sqlFiles, err := getSqlFiles(inputDir)
+	// Get input path from args
+	inputPaths := ctx.Args().Slice()
+	if len(inputPaths) == 0 {
+		inputPaths = []string{"."}
+	}
+
+	sqlFiles, err := getSqlFiles(inputPaths...)
 	if err != nil {
 		return err
 	}
