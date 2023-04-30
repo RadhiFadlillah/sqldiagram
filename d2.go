@@ -16,9 +16,11 @@ import (
 func generateD2(groups []Group) (*d2target.Diagram, *d2graph.Graph, error) {
 	// Prepare template
 	tpl, err := template.New("d2").
-		Funcs(template.FuncMap{"bgColor": getBgColor}).
-		Funcs(template.FuncMap{"fgColor": getFgColor}).
-		Parse(d2TemplateText)
+		Funcs(template.FuncMap{
+			"bgColor": getBgColor,
+			"fgColor": getFgColor,
+			"column":  d2EscapeKeyword,
+		}).Parse(d2TemplateText)
 	if err != nil {
 		return nil, nil, fmt.Errorf("create template error: %w", err)
 	}
@@ -81,6 +83,13 @@ func d2CodesFromGroups(tpl *template.Template, groups []Group) ([]byte, error) {
 	return buffer.Bytes(), nil
 }
 
+func d2EscapeKeyword(name string) string {
+	if _, reserved := d2graph.ReservedKeywords[name]; reserved {
+		return fmt.Sprintf("\"%s \"", name)
+	}
+	return name
+}
+
 var d2TemplateText = `
 {{- define "styles"}}
 	classes: {
@@ -113,15 +122,15 @@ var d2TemplateText = `
 			}
 
 			{{- range $pk := $table.PrimaryKeys}}
-				{{$pk.Name}}: {{$pk.Tp}} {constraint: primary_key}
+				{{column $pk.Name}}: {{$pk.Tp}} {constraint: primary_key}
 			{{- end}}
 
 			{{- range $fk := $table.ForeignKeys}}
-				{{$fk.Name}}: {{$fk.Tp}} {constraint: foreign_key}
+				{{column $fk.Name}}: {{$fk.Tp}} {constraint: foreign_key}
 			{{- end}}
 
 			{{- range $col := $table.Columns}}
-				{{$col.Name}}: {{$col.Tp}} {{- if $col.Unique -}} {constraint: unique} {{- end}}
+				{{column $col.Name}}: {{$col.Tp}} {{- if $col.Unique -}} {constraint: unique} {{- end}}
 			{{- end}}
 		}
 	{{- end}}
@@ -168,15 +177,15 @@ var d2TemplateText = `
 					}
 
 					{{- range $pk := $table.PrimaryKeys}}
-						{{$pk.Name}}: {{$pk.Tp}} {constraint: primary_key}
+						{{column $pk.Name}}: {{$pk.Tp}} {constraint: primary_key}
 					{{- end}}
 
 					{{- range $fk := $table.ForeignKeys}}
-						{{$fk.Name}}: {{$fk.Tp}} {constraint: foreign_key}
+						{{column $fk.Name}}: {{$fk.Tp}} {constraint: foreign_key}
 					{{- end}}
 
 					{{- range $col := $table.Columns}}
-						{{$col.Name}}: {{$col.Tp}} {{- if $col.Unique -}} {constraint: unique} {{- end}}
+						{{column $col.Name}}: {{$col.Tp}} {{- if $col.Unique -}} {constraint: unique} {{- end}}
 					{{- end}}
 				}
 			{{- end}}
