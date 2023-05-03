@@ -4,16 +4,14 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 
+	. "github.com/RadhiFadlillah/sqldiagram/internal/model"
+	"github.com/RadhiFadlillah/sqldiagram/internal/mysql"
 	"github.com/pingcap/tidb/parser"
-	"github.com/pingcap/tidb/parser/ast"
 	_ "github.com/pingcap/tidb/types/parser_driver"
 	"github.com/urfave/cli/v2"
 )
-
-var rxColumnType = regexp.MustCompile(`(?i)^[a-z]+`)
 
 func cmdMySql() *cli.Command {
 	cmd := &cli.Command{
@@ -93,11 +91,14 @@ func cmdMySqlAction(ctx *cli.Context) error {
 		// Put group name to related tables
 		for _, g := range groups {
 			for _, t := range g.Tables {
-				for i, rt := range t.RelatedTables {
-					if rtGroup, exist := mapTableGroup[rt]; exist {
-						t.RelatedTables[i] = rtGroup + "." + rt
+				t.Columns.ForEach(func(name string, c Column) {
+					for i, ref := range c.ReferTo {
+						if refGroup, exist := mapTableGroup[ref]; exist {
+							c.ReferTo[i] = refGroup + "." + ref
+						}
 					}
-				}
+					t.Columns.Put(name, c)
+				})
 			}
 		}
 	}
@@ -137,71 +138,7 @@ func parseMySqlFile(p *parser.Parser, path string) (*Group, error) {
 	}
 
 	// Extract DDL queries only
-	var tables []Table
-	for _, query := range queries {
-		if ddlQuery, isDDL := query.(*ast.CreateTableStmt); isDDL {
-			// Extract constraints
-			uniqueKeys := NewSet[string]()
-			primaryKeys := NewSet[string]()
-			foreignKeys := NewSet[string]()
-			relatedTables := NewSet[string]()
-
-			for _, c := range ddlQuery.Constraints {
-				switch c.Tp {
-				case ast.ConstraintPrimaryKey:
-					for _, col := range c.Keys {
-						primaryKeys.Put(col.Column.Name.String())
-					}
-
-				case ast.ConstraintUniq, ast.ConstraintUniqKey:
-					for _, col := range c.Keys {
-						uniqueKeys.Put(col.Column.Name.String())
-					}
-
-				case ast.ConstraintForeignKey:
-					if r := c.Refer; r != nil {
-						for _, col := range c.Keys {
-							colName := col.Column.Name.String()
-							foreignKeys.Put(colName)
-						}
-
-						dstTable := r.Table.Name.String()
-						relatedTables.Put(dstTable)
-					}
-				}
-			}
-
-			// Extract columns
-			var primaryColumns, foreignColumns, columns []Column
-			for _, c := range ddlQuery.Cols {
-				colName := c.Name.String()
-				colType := rxColumnType.FindString(c.Tp.String())
-
-				column := Column{
-					Name:   colName,
-					Tp:     strings.ToUpper(colType),
-					Unique: uniqueKeys.Has(colName),
-				}
-
-				if primaryKeys.Has(colName) {
-					primaryColumns = append(primaryColumns, column)
-				} else if foreignKeys.Has(colName) {
-					foreignColumns = append(foreignColumns, column)
-				} else {
-					columns = append(columns, column)
-				}
-			}
-
-			// Save tables
-			tables = append(tables, Table{
-				Name:          ddlQuery.Table.Name.String(),
-				PrimaryKeys:   primaryColumns,
-				ForeignKeys:   foreignColumns,
-				Columns:       columns,
-				RelatedTables: relatedTables.Keys(),
-			})
-		}
-	}
+	tables := mysql.Parse(queries, nil)
 
 	// Prepare group data
 	groupName := filepath.Base(path)

@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"text/template"
 
+	"github.com/RadhiFadlillah/sqldiagram/internal/common"
+	. "github.com/RadhiFadlillah/sqldiagram/internal/model"
 	"oss.terrastruct.com/d2/d2graph"
 	"oss.terrastruct.com/d2/d2layouts/d2elklayout"
 	"oss.terrastruct.com/d2/d2lib"
@@ -17,9 +19,11 @@ func generateD2(groups []Group, direction string) (*d2target.Diagram, *d2graph.G
 	// Prepare template
 	tpl, err := template.New("d2").
 		Funcs(template.FuncMap{
-			"bgColor": getBgColor,
-			"fgColor": getFgColor,
-			"column":  d2EscapeKeyword,
+			"bgColor":    getBgColor,
+			"fgColor":    getFgColor,
+			"column":     d2EscapeKeyword,
+			"constraint": d2ColumnConstraint,
+			"relations":  d2TableRelations,
 		}).Parse(d2TemplateText)
 	if err != nil {
 		return nil, nil, fmt.Errorf("create template error: %w", err)
@@ -92,6 +96,27 @@ func d2EscapeKeyword(name string) string {
 	return name
 }
 
+func d2ColumnConstraint(column Column) string {
+	if column.IsPK {
+		return "{constraint: primary_key}"
+	} else if column.IsFK {
+		return "{constraint: foreign_key}"
+	} else if column.IsUnique {
+		return "{constraint: unique}"
+	}
+	return ""
+}
+
+func d2TableRelations(table Table) []string {
+	relations := common.NewSet[string]()
+	table.Columns.ForEach(func(_ string, c Column) {
+		for _, ref := range c.ReferTo {
+			relations.Put(fmt.Sprintf("%s -> %s", table.Name, ref))
+		}
+	})
+	return relations.Keys()
+}
+
 type d2TemplateData struct {
 	Direction string
 	Groups    []Group
@@ -129,24 +154,16 @@ var d2TemplateText = `
 				stroke: "#FFF"
 			}
 
-			{{- range $pk := $table.PrimaryKeys}}
-				{{column $pk.Name}}: {{$pk.Tp}} {constraint: primary_key}
-			{{- end}}
-
-			{{- range $fk := $table.ForeignKeys}}
-				{{column $fk.Name}}: {{$fk.Tp}} {constraint: foreign_key}
-			{{- end}}
-
-			{{- range $col := $table.Columns}}
-				{{column $col.Name}}: {{$col.Tp}} {{- if $col.Unique -}} {constraint: unique} {{- end}}
+			{{- range $col := $table.Columns.Values}}
+				{{column $col.Name}}: {{$col.Type}} {{constraint $col}}
 			{{- end}}
 		}
 	{{- end}}
 
 	{{- range $tableIdx, $table := .Tables }}
 		{{$tableFg := (fgColor $tableIdx)}}
-		{{- range $rel := $table.RelatedTables}}
-			{{$table.Name}} -> {{$rel}}: {class: relation; style.stroke: "{{$tableFg}}"}
+		{{- range $rel := relations $table}}
+			{{$rel}}: {class: relation; style.stroke: "{{$tableFg}}"}
 		{{- end}}
 	{{- end}}
 
@@ -184,16 +201,8 @@ var d2TemplateText = `
 						stroke: "#FFF"
 					}
 
-					{{- range $pk := $table.PrimaryKeys}}
-						{{column $pk.Name}}: {{$pk.Tp}} {constraint: primary_key}
-					{{- end}}
-
-					{{- range $fk := $table.ForeignKeys}}
-						{{column $fk.Name}}: {{$fk.Tp}} {constraint: foreign_key}
-					{{- end}}
-
-					{{- range $col := $table.Columns}}
-						{{column $col.Name}}: {{$col.Tp}} {{- if $col.Unique -}} {constraint: unique} {{- end}}
+					{{- range $col := $table.Columns.Values}}
+						{{column $col.Name}}: {{$col.Type}} {{constraint $col}}
 					{{- end}}
 				}
 			{{- end}}
@@ -203,8 +212,8 @@ var d2TemplateText = `
 	{{- range $groupIdx, $group := .Groups }}
 		{{- $groupFg := (fgColor $groupIdx) }}
 		{{- range $table := $group.Tables}}
-			{{- range $rel := $table.RelatedTables}}
-				{{$group.Name}}.{{$table.Name}} -> {{$rel}}: {class: relation; style.stroke: "{{$groupFg}}"}
+			{{- range $rel := relations $table}}
+				{{$group.Name}}.{{$rel}}: {class: relation; style.stroke: "{{$groupFg}}"}
 			{{- end}}
 		{{- end}}
 	{{- end}}
