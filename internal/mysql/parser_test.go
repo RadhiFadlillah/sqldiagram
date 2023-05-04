@@ -14,9 +14,9 @@ func parseSingleQuery(s string) ast.StmtNode {
 	}
 
 	switch stmt := node.(type) {
-	case *ast.CreateTableStmt:
-		return stmt
-	case *ast.AlterTableStmt:
+	case *ast.CreateTableStmt,
+		*ast.AlterTableStmt,
+		*ast.DropTableStmt:
 		return stmt
 	default:
 		panic(fmt.Errorf("unknown stmt type: %q", reflect.TypeOf(node)))

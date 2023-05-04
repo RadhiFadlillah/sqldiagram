@@ -12,6 +12,8 @@ func Parse(stmts []ast.StmtNode, current []Table) []Table {
 			current = parseCreateTable(s, current)
 		case *ast.AlterTableStmt:
 			current = parseAlterTable(s, current)
+		case *ast.DropTableStmt:
+			current = parseDropTable(s, current)
 		}
 	}
 
