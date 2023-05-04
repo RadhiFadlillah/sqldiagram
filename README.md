@@ -28,24 +28,25 @@ go install -v github.com/RadhiFadlillah/sqldiagram
 - Works offline.
 - Has decent styling, thanks to D2.
 - Directly parse SQL language so you don't have to learn a new diagramming language.
-- Allow you to group tables in the diagram for better readability.
+- Allow you to group tables in the diagram for better readability, by separating the SQL queries into several files.
 
 ## Limitations
 
-- Currently only support MySQL dialect.
+- Currently only support MySQL dialect, so no PostgreSQL.
 - Relations only drawn between table and not between columns, which is because of limitations in D2.
 - Sometimes the relational lines will drawn above tables, which again is because of limitations in D2.
 - The output is only in raw D2 language or SVG, so if you need PNG, you need to manually convert it.
 - The relationship is only drawn as normal arrow.
-- Only support limited DDL commands:
 
-  - `CREATE TABLE`
-  - `DROP TABLE`
-  - `ALTER TABLE DROP COLUMNS`
-  - `ALTER TABLE ADD COLUMNS`
-  - `ALTER TABLE RENAME COLUMNS`
-  - `ALTER TABLE CHANGE COLUMNS`
-  - `ALTER TABLE ADD CONSTRAINT`
+Besides those point, SQLDiagram currently also only support limited DDL commands:
+
+- `CREATE TABLE`
+- `DROP TABLE`
+- `ALTER TABLE DROP COLUMNS`
+- `ALTER TABLE ADD COLUMNS`
+- `ALTER TABLE RENAME COLUMNS`
+- `ALTER TABLE CHANGE COLUMNS`
+- `ALTER TABLE ADD CONSTRAINT`
 
 ## Usage
 
