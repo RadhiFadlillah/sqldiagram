@@ -46,22 +46,11 @@ func generateD2(groups []Group, direction string) (*d2target.Diagram, *d2graph.G
 		return nil, nil, fmt.Errorf("textmeasure error: %w", err)
 	}
 
-	// Prepare ELK layout
-	layout := func(ctx context.Context, g *d2graph.Graph) error {
-		return d2elklayout.Layout(ctx, g, &d2elklayout.ConfigurableOpts{
-			Algorithm:       "layered",
-			NodeSpacing:     20.0,
-			Padding:         "[top=50,left=50,bottom=50,right=50]",
-			EdgeNodeSpacing: 50.0,
-			SelfLoopSpacing: 50.0,
-		})
-	}
-
 	// Generate diagram and graph
 	ctx := context.Background()
 	diagram, graph, err := d2lib.Compile(ctx, string(d2Codes), &d2lib.CompileOptions{
 		Ruler:  ruler,
-		Layout: layout})
+		Layout: d2elklayout.DefaultLayout})
 	if err != nil {
 		return nil, nil, fmt.Errorf("compile error: %w", err)
 	}
@@ -109,11 +98,11 @@ func d2ColumnConstraint(column Column) string {
 
 func d2TableRelations(table Table) []string {
 	relations := common.NewSet[string]()
-	table.Columns.ForEach(func(_ string, c Column) {
+	for _, c := range table.Columns {
 		for _, ref := range c.ReferTo {
 			relations.Put(fmt.Sprintf("%s -> %s", table.Name, ref))
 		}
-	})
+	}
 	return relations.Keys()
 }
 
@@ -154,7 +143,7 @@ var d2TemplateText = `
 				stroke: "#FFF"
 			}
 
-			{{- range $col := $table.Columns.Values}}
+			{{- range $col := $table.Columns}}
 				{{column $col.Name}}: {{$col.Type}} {{constraint $col}}
 			{{- end}}
 		}
@@ -201,7 +190,7 @@ var d2TemplateText = `
 						stroke: "#FFF"
 					}
 
-					{{- range $col := $table.Columns.Values}}
+					{{- range $col := $table.Columns}}
 						{{column $col.Name}}: {{$col.Type}} {{constraint $col}}
 					{{- end}}
 				}

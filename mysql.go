@@ -91,14 +91,14 @@ func cmdMySqlAction(ctx *cli.Context) error {
 		// Put group name to related tables
 		for _, g := range groups {
 			for _, t := range g.Tables {
-				t.Columns.ForEach(func(name string, c Column) {
+				for i, c := range t.Columns {
 					for i, ref := range c.ReferTo {
 						if refGroup, exist := mapTableGroup[ref]; exist {
 							c.ReferTo[i] = refGroup + "." + ref
 						}
 					}
-					t.Columns.Put(name, c)
-				})
+					t.Columns[i] = c
+				}
 			}
 		}
 	}

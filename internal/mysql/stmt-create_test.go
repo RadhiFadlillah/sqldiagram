@@ -1,7 +1,6 @@
 package mysql
 
 import (
-	"fmt"
 	"testing"
 
 	. "github.com/RadhiFadlillah/sqldiagram/internal/model"
@@ -32,7 +31,7 @@ func Test_parseCreateTable(t *testing.T) {
 	assert.Len(t, tables, 1)
 
 	table = tables[0]
-	columns = table.Columns.Values()
+	columns = table.Columns
 	assert.Equal(t, "person", table.Name)
 	assert.Len(t, columns, 2)
 
@@ -56,7 +55,7 @@ func Test_parseCreateTable(t *testing.T) {
 	assert.Len(t, tables, 1)
 
 	table = tables[0]
-	columns = table.Columns.Values()
+	columns = table.Columns
 	assert.Equal(t, "person", table.Name)
 	assert.Len(t, columns, 4)
 
@@ -94,7 +93,7 @@ func Test_parseCreateTable(t *testing.T) {
 	assert.Len(t, tables, 1)
 
 	table = tables[0]
-	columns = table.Columns.Values()
+	columns = table.Columns
 	assert.Equal(t, "person", table.Name)
 	assert.Len(t, columns, 4)
 
@@ -114,18 +113,4 @@ func Test_parseCreateTable(t *testing.T) {
 
 	assert.Equal(t, "name", columns[3].Name)
 	assert.Equal(t, "VARCHAR", columns[3].Type)
-}
-
-func parseSingleQuery(s string) ast.StmtNode {
-	node, err := sqlParser.ParseOneStmt(s, "utf8mb4", "")
-	if err != nil {
-		panic(err)
-	}
-
-	switch stmt := node.(type) {
-	case *ast.CreateTableStmt:
-		return stmt
-	default:
-		panic(fmt.Errorf("unknown stmt type"))
-	}
 }

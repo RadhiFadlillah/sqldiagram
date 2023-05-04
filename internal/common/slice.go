@@ -22,3 +22,27 @@ func UniqueSlice[T comparable](items []T) []T {
 	}
 	return uniqueList
 }
+
+func DeleteSliceItem[T any](items []T, index int) []T {
+	var zero T
+	if index < 0 || index >= len(items) {
+		return items
+	}
+
+	copy(items[index:], items[index+1:])
+	items[len(items)-1] = zero
+	items = items[:len(items)-1]
+	return items
+}
+
+func InsertSliceItem[T any](items []T, index int, newItem T) []T {
+	var zero T
+	if index < 0 || index >= len(items) {
+		return items
+	}
+
+	items = append(items, zero)
+	copy(items[index+1:], items[index:])
+	items[index] = newItem
+	return items
+}

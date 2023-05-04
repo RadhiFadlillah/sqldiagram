@@ -21,19 +21,19 @@ func parseCreateTable(stmt *ast.CreateTableStmt, current []Table) []Table {
 		switch c.Tp {
 		case ast.ConstraintPrimaryKey:
 			for _, col := range c.Keys {
-				primaryKeys.Put(col.Column.Name.String())
+				primaryKeys.Put(col.Column.OrigColName())
 			}
 
 		case ast.ConstraintUniq, ast.ConstraintUniqKey:
 			for _, col := range c.Keys {
-				uniqueKeys.Put(col.Column.Name.String())
+				uniqueKeys.Put(col.Column.OrigColName())
 			}
 
 		case ast.ConstraintForeignKey:
 			if r := c.Refer; r != nil {
 				dstTable := r.Table.Name.String()
 				for _, col := range c.Keys {
-					colName := col.Column.Name.String()
+					colName := col.Column.OrigColName()
 					dstTables := append(foreignKeys.Get(colName), dstTable)
 					foreignKeys.Put(colName, dstTables)
 				}
@@ -42,16 +42,16 @@ func parseCreateTable(stmt *ast.CreateTableStmt, current []Table) []Table {
 	}
 
 	// Extract columns
-	columns := common.NewOrderedMap[string, Column]()
+	var columns []Column
 	for _, c := range stmt.Cols {
-		colName := c.Name.String()
+		colName := c.Name.OrigColName()
 		colType := rxColumnType.FindString(c.Tp.String())
 		referTo := foreignKeys.Get(colName)
 
 		var isPK, isFK, isUnique bool
 		for _, opt := range c.Options {
-			isPK = opt.Tp == ast.ColumnOptionPrimaryKey
-			isUnique = opt.Tp == ast.ColumnOptionUniqKey
+			isPK = isPK || opt.Tp == ast.ColumnOptionPrimaryKey
+			isUnique = isUnique || opt.Tp == ast.ColumnOptionUniqKey
 
 			if opt.Refer != nil {
 				isFK = true
@@ -59,7 +59,7 @@ func parseCreateTable(stmt *ast.CreateTableStmt, current []Table) []Table {
 			}
 		}
 
-		columns.Put(colName, Column{
+		columns = append(columns, Column{
 			Name:     colName,
 			Type:     strings.ToUpper(colType),
 			IsPK:     primaryKeys.Has(colName) || isPK,

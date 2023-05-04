@@ -10,6 +10,8 @@ func Parse(stmts []ast.StmtNode, current []Table) []Table {
 		switch s := stmt.(type) {
 		case *ast.CreateTableStmt:
 			current = parseCreateTable(s, current)
+		case *ast.AlterTableStmt:
+			current = parseAlterTable(s, current)
 		}
 	}
 

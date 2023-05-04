@@ -1,7 +1,5 @@
 package model
 
-import "github.com/RadhiFadlillah/sqldiagram/internal/common"
-
 type Group struct {
 	Name   string
 	Label  string
@@ -10,7 +8,7 @@ type Group struct {
 
 type Table struct {
 	Name    string
-	Columns *common.OrderedMap[string, Column]
+	Columns []Column
 }
 
 type Column struct {
