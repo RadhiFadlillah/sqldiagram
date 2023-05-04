@@ -1,4 +1,4 @@
-package main
+package cmd
 
 import (
 	"fmt"
@@ -13,23 +13,20 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-func cmdMySql() *cli.Command {
-	cmd := &cli.Command{
-		Name:   "mysql",
-		Usage:  "generate ERD from MySQL dialect",
-		Action: cmdMySqlAction,
-	}
-
-	return cmd
+var cmdMySql = &cli.Command{
+	Name:   "mysql",
+	Usage:  "generate ERD from MySQL dialect",
+	Flags:  initFlags(),
+	Action: mySqlAction,
 }
 
-func cmdMySqlAction(ctx *cli.Context) error {
+func mySqlAction(ctx *cli.Context) error {
 	// Parse flags
-	dontUseGroup := ctx.Bool(appNoGroup)
-	renderRawD2 := ctx.Bool(appRawD2)
-	outputPath := ctx.String(appOutput)
+	renderRawD2 := ctx.Bool(fRawD2)
+	dontUseGroup := ctx.Bool(fNoGroup)
+	outputPath := ctx.String(fOutput)
 
-	diagramDirection := ctx.String(appDirection)
+	diagramDirection := ctx.String(fDirection)
 	diagramDirection = strings.ToLower(diagramDirection)
 	switch diagramDirection {
 	case "up", "down", "left":

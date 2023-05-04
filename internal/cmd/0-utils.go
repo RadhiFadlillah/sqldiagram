@@ -1,14 +1,10 @@
-package main
+package cmd
 
 import (
 	"fmt"
 	"os"
 	"path/filepath"
 )
-
-// ================================================
-// COMMON FUNCTIONS
-// ================================================
 
 func getSqlFiles(inputPaths ...string) ([]string, error) {
 	var sqlFiles []string
