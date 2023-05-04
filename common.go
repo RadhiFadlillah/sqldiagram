@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io/fs"
 	"os"
 	"path/filepath"
 )
@@ -29,15 +28,16 @@ func getSqlFiles(inputPaths ...string) ([]string, error) {
 		}
 
 		// Look for SQL files inside dir
-		err = filepath.Walk(input, func(path string, info fs.FileInfo, err error) error {
-			if !info.IsDir() && filepath.Ext(path) == ".sql" {
-				sqlFiles = append(sqlFiles, path)
-			}
-			return nil
-		})
-
+		dirItems, err := os.ReadDir(input)
 		if err != nil {
 			continue
+		}
+
+		for _, item := range dirItems {
+			path := filepath.Join(input, item.Name())
+			if !item.IsDir() && filepath.Ext(path) == ".sql" {
+				sqlFiles = append(sqlFiles, path)
+			}
 		}
 	}
 
